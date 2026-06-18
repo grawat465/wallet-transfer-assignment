@@ -30,6 +30,12 @@ public class TransferService {
     }
 
     public TransferResult transfer(String idempotencyKey, UUID fromWalletId, UUID toWalletId, BigDecimal amount) {
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            throw new InvalidTransferRequestException("idempotencyKey must not be blank");
+        }
+        if (fromWalletId == null || toWalletId == null) {
+            throw new InvalidTransferRequestException("fromWalletId and toWalletId must not be null");
+        }
         if (fromWalletId.equals(toWalletId)) {
             throw new InvalidTransferRequestException("fromWalletId and toWalletId must differ");
         }

@@ -145,6 +145,21 @@ class TransferServiceIntegrationTest extends AbstractIntegrationTest {
         assertThat(finalSource.getBalance().signum()).isGreaterThanOrEqualTo(0);
         assertThat(finalDestination.getBalance())
                 .isEqualByComparingTo(amountPerTransfer.multiply(BigDecimal.valueOf(processed)));
+
+        futures.stream().map(this::resultOf).forEach(r -> {
+            List<LedgerEntry> entries = ledgerEntryRepository.findByTransferId(r.getTransfer().getId());
+            if (r.getTransfer().getStatus() == TransferStatus.PROCESSED) {
+                assertThat(entries).hasSize(2);
+                assertThat(entries).extracting(LedgerEntry::getEntryType)
+                        .containsExactlyInAnyOrder(EntryType.DEBIT, EntryType.CREDIT);
+                BigDecimal net = entries.stream()
+                        .map(e -> e.getEntryType() == EntryType.DEBIT ? e.getAmount().negate() : e.getAmount())
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                assertThat(net).isEqualByComparingTo(BigDecimal.ZERO);
+            } else {
+                assertThat(entries).isEmpty();
+            }
+        });
     }
 
     @Test
